@@ -49,7 +49,7 @@ for title in existing {
 }
     
 tokio::spawn(async move {
-    poller::run(pool_for_loop, seen, config.news_api_key, config.llm_key).await;
+    poller::run(pool_for_loop, seen, config.news_api_key, config.llm_key,config.tickers).await;
 });
 
 let app = axum::Router::new()

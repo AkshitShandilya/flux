@@ -9,12 +9,15 @@ pub async fn run(
     mut seen: HashSet<String>,
     api_key: String,
     llm_key: String,
+    tickers: Vec<String>,
 ) {
+    let query = tickers.join("+OR+");
+
     let client = reqwest::Client::new();
     let llm_url = "https://api.groq.com/openai/v1/chat/completions";
     let url = format!(
-        "https://newsapi.org/v2/everything?q=AAPL&apiKey={}",
-        api_key
+        "https://newsapi.org/v2/everything?q={}&apiKey={}",
+        query,api_key
     );
 
     loop{
