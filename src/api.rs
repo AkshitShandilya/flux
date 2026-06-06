@@ -1,13 +1,28 @@
 
 use sqlx::SqlitePool;
-
+#[derive(serde::Deserialize)]
+pub struct SignalQuery {
+    pub ticker: Option<String>,
+    pub limit: Option<i64>,
+}
 
 pub async fn get_signals(
-    axum::extract::State(pool): axum::extract::State<SqlitePool>
+    axum::extract::State(pool): axum::extract::State<SqlitePool>,
+    axum::extract::Query(query): axum::extract::Query<SignalQuery>,
 ) -> axum::response::Json<serde_json::Value> {
-    let rows = sqlx::query_as::<_, (i64, String, String, f64, String)>(
-        "SELECT id, title, published_at, score, reason FROM signals ORDER BY scored_at DESC"
-    )
+   let mut sql = String::from("SELECT id, title, published_at, score, reason FROM signals");
+
+if let Some(ticker) = &query.ticker {
+    sql.push_str(&format!(" WHERE title LIKE '%{}%'", ticker));
+}
+
+sql.push_str(" ORDER BY scored_at DESC");
+
+if let Some(limit) = query.limit {
+    sql.push_str(&format!(" LIMIT {}", limit));
+}
+
+let rows = sqlx::query_as::<_, (i64, String, String, f64, String)>(&sql)
     .fetch_all(&pool)
     .await
     .expect("failed to fetch signals");
