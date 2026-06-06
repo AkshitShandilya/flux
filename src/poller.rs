@@ -10,6 +10,7 @@ pub async fn run(
     api_key: String,
     llm_key: String,
     tickers: Vec<String>,
+    poll_interval_secs:u64,
 ) {
     let query = tickers.join("+OR+");
 
@@ -116,6 +117,6 @@ tokio::time::sleep(tokio::time::Duration::from_secs(3)).await;
 
 }
         
-tokio::time::sleep(tokio::time::Duration::from_secs(120)).await;
+tokio::time::sleep(tokio::time::Duration::from_secs(poll_interval_secs)).await;
     }
 }

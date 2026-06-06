@@ -49,14 +49,15 @@ for title in existing {
 }
     
 tokio::spawn(async move {
-    poller::run(pool_for_loop, seen, config.news_api_key, config.llm_key,config.tickers).await;
+    poller::run(pool_for_loop, seen, config.news_api_key, config.llm_key,config.tickers,config.poll_interval_secs).await;
 });
 
 let app = axum::Router::new()
     .route("/signals", axum::routing::get(get_signals))
     .with_state(pool_for_api);
-
-let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+ 
+let addr = format!("0.0.0.0:{}", config.port);
+let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
 axum::serve(listener, app).await.unwrap();
 
     

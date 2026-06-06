@@ -1,0 +1,3 @@
+tickers = ["Reliance Industries stock", "Infosys shares", "TCS stock", "HDFC Bank shares", "Wipro stock"]
+poll_interval_secs = 120
+port = 3000
