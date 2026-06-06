@@ -7,6 +7,7 @@ use crate::models::*;
 pub async fn run(
     pool: SqlitePool,
     mut seen: HashSet<String>,
+    tx: tokio::sync::broadcast::Sender<String>,
     api_key: String,
     llm_key: String,
     tickers: Vec<String>,
@@ -98,6 +99,14 @@ if !sentiment.relevant.unwrap_or(true) {
     println!("Skipping irrelevant headline: {}", article.title);
     continue;
 }
+let signal = serde_json::json!({
+    "title": article.title,
+    "published_at": article.published_at,
+    "score": score,
+    "reason": sentiment.reason
+});
+
+tx.send(signal.to_string()).ok();
 
 println!("Headline: {}", article.title);
 println!("Published at: {}", article.published_at);

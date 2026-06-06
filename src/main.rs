@@ -9,6 +9,7 @@ mod models;
 use dotenvy::dotenv;
 use sqlx::SqlitePool;
 use crate::api::get_signals;
+use crate::api::AppState;
 
 
 
@@ -47,14 +48,21 @@ let existing: Vec<String> = sqlx::query_scalar("SELECT title FROM signals")
 for title in existing {
     seen.insert(title);
 }
-    
+ 
+let (tx, _rx) = tokio::sync::broadcast::channel::<String>(100);
+let tx_poller = tx.clone();
+let tx_ws = tx.clone();
 tokio::spawn(async move {
-    poller::run(pool_for_loop, seen, config.news_api_key, config.llm_key,config.tickers,config.poll_interval_secs).await;
+    poller::run(pool_for_loop, seen, tx_poller,config.news_api_key, config.llm_key,config.tickers,config.poll_interval_secs).await;
 });
 
 let app = axum::Router::new()
     .route("/signals", axum::routing::get(get_signals))
-    .with_state(pool_for_api);
+    .route("/ws", axum::routing::get(crate::api::ws_handler))
+    .with_state(AppState {
+        pool: pool_for_api,
+        tx: tx_ws,
+    });
  
 let addr = format!("0.0.0.0:{}", config.port);
 let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
