@@ -16,7 +16,7 @@ pub async fn run(
     let client = reqwest::Client::new();
     let llm_url = "https://api.groq.com/openai/v1/chat/completions";
     let url = format!(
-        "https://newsapi.org/v2/everything?q={}&apiKey={}",
+        "https://newsapi.org/v2/everything?q={}&language=en&apiKey={}",
         query,api_key
     );
 
@@ -50,13 +50,16 @@ pub async fn run(
     let prompt = format!(
     "You are a financial sentiment analyzer. Analyze this stock news headline and return ONLY a valid JSON object with no extra text, no markdown, no backticks.
     
-    The JSON must have exactly these two fields:
+    The JSON must have exactly these three fields:
       - \"score\": a number between -1.0 and 1.0 (never null, use 0.0 if uncertain)
       - \"reason\": a single sentence string explaining the score
-
+      - \"relevant\": true or false — set to false if the headline is not directly about Indian stock markets, NSE, BSE, or these companies: Reliance Industries, Infosys, TCS, HDFC Bank, Wipro
+    
+    If irrelevant, return: {{\"score\": 0.0, \"reason\": \"irrelevant\", \"relevant\": false}}
+    
     Headline: {}",
     article.title
-    );
+);
     let body = serde_json::json!({
     "model": "llama-3.1-8b-instant",
     "messages": [
@@ -90,6 +93,10 @@ let clean = content
 let sentiment: SentimentScore = serde_json::from_str(clean)
     .expect("failed to parse score JSON");
 let score = sentiment.score.unwrap_or(0.0);
+if !sentiment.relevant.unwrap_or(true) {
+    println!("Skipping irrelevant headline: {}", article.title);
+    continue;
+}
 
 println!("Headline: {}", article.title);
 println!("Published at: {}", article.published_at);

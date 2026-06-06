@@ -31,4 +31,5 @@ pub struct Message {
 pub struct SentimentScore {
     pub score: Option<f64>,
     pub reason: String,
+    pub relevant: Option<bool>,
 }
