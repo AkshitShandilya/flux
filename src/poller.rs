@@ -103,7 +103,7 @@ let sentiment: SentimentScore = serde_json::from_str(clean)
     .expect("failed to parse score JSON");
 let score = sentiment.score.unwrap_or(0.0);
 if !sentiment.relevant.unwrap_or(true) {
-    println!("Skipping irrelevant headline: {}", article.title);
+    tracing::warn!("Skipping irrelevant: {}", article.title);  
     continue;
 }
 
@@ -120,20 +120,20 @@ let final_score = (alpha * score) + (beta * momentum);
 let signal = serde_json::json!({
     "title": article.title,
     "published_at": article.published_at,
-    "score": final_score,
+    "sentiment_score":score,
+    "blended_score": final_score,
     "reason": sentiment.reason
 });
 
 tx.send(signal.to_string()).ok();
 
-println!("Headline: {}", article.title);
-println!("Published at: {}", article.published_at);
-println!("Score: {}", final_score);
-println!("Reason: {}", sentiment.reason);
+tracing::info!("Headline: {}", article.title);
+tracing::info!("Published At: {} |Sentiment: {} | Blended: {} | Reason: {}", article.published_at,score, final_score, sentiment.reason);
 
-sqlx::query("INSERT INTO signals (title,published_at, score, reason) VALUES (?,?, ?, ?)")
+sqlx::query("INSERT INTO signals (title,published_at, sentiment_score,blended_score, reason) VALUES (?,?,?, ?, ?)")
     .bind(&article.title)
     .bind(&article.published_at)
+    .bind(score)
     .bind(final_score)
     .bind(&sentiment.reason)
     .execute(&pool)

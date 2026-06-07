@@ -14,7 +14,7 @@ pub async fn get_signals(
     axum::extract::State(state): axum::extract::State<AppState>,
     axum::extract::Query(query): axum::extract::Query<SignalQuery>,
 ) -> axum::response::Json<serde_json::Value> {
-   let mut sql = String::from("SELECT id, title, published_at, score, reason FROM signals");
+   let mut sql = String::from("SELECT id, title, published_at, sentiment_score, blended_score, reason FROM signals");
 
 if let Some(ticker) = &query.ticker {
     sql.push_str(&format!(" WHERE title LIKE '%{}%'", ticker));
@@ -26,7 +26,7 @@ if let Some(limit) = query.limit {
     sql.push_str(&format!(" LIMIT {}", limit));
 }
 
-let rows = sqlx::query_as::<_, (i64, String, String, f64, String)>(&sql)
+let rows = sqlx::query_as::<_, (i64, String, String,f64, f64, String)>(&sql)
     .fetch_all(&state.pool)
     .await
     .expect("failed to fetch signals");
@@ -36,8 +36,9 @@ let rows = sqlx::query_as::<_, (i64, String, String, f64, String)>(&sql)
             "id": row.0,
             "title": row.1,
             "published_at": row.2,
-            "score": row.3,
-            "reason": row.4
+            "sentiment_score": row.3,
+            "blended_score":row.4,
+            "reason": row.5,
         })
     }).collect();
 

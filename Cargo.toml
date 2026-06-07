@@ -13,3 +13,5 @@ dotenvy = "0.15"
 sqlx = { version = "0.7", features = ["runtime-tokio", "sqlite"] }
 axum = { version = "0.7", features = ["ws"] }
 toml = "0.8"
+tracing = "0.1"
+tracing-subscriber = "0.3"

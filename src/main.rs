@@ -11,6 +11,7 @@ use dotenvy::dotenv;
 use sqlx::SqlitePool;
 use crate::api::get_signals;
 use crate::api::AppState;
+use tracing_subscriber;
 
 
 
@@ -18,6 +19,7 @@ use crate::api::AppState;
 #[tokio::main]
 async fn main() {
     dotenv().ok();
+    tracing_subscriber::fmt::init();
  let config = crate::config::Config::load();
 
  let mut seen:std::collections::HashSet<String> = std::collections::HashSet::new();
@@ -30,7 +32,8 @@ async fn main() {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL,
         published_at TEXT,
-        score REAL NOT NULL,
+        sentiment_score REAL NOT NULL,
+        blended_score REAL NOT NULL,
         reason TEXT,
         scored_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )"
