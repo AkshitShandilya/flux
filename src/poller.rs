@@ -2,7 +2,9 @@
 use reqwest;
 use sqlx::SqlitePool;
 use std::collections::HashSet;
-use crate::models::*;
+use crate::{config::Ticker, models::*};
+
+
 
 pub async fn run(
     pool: SqlitePool,
@@ -10,10 +12,14 @@ pub async fn run(
     tx: tokio::sync::broadcast::Sender<String>,
     api_key: String,
     llm_key: String,
-    tickers: Vec<String>,
+    tickers: Vec<Ticker>,
     poll_interval_secs:u64,
+    alpha:f64,
+    beta:f64,
+    alpha_vantage_key:String,
+    price_fetch_interval_secs:u64,
 ) {
-    let query = tickers.join("+OR+");
+   let query = tickers.iter().map(|t| t.name.as_str()).collect::<Vec<&str>>().join("+OR+");
 
     let client = reqwest::Client::new();
     let llm_url = "https://api.groq.com/openai/v1/chat/completions";
@@ -21,6 +27,7 @@ pub async fn run(
         "https://newsapi.org/v2/everything?q={}&language=en&apiKey={}",
         query,api_key
     );
+    let mut price_cache = crate::price::PriceCache::new(price_fetch_interval_secs);
 
     loop{
         
@@ -99,10 +106,21 @@ if !sentiment.relevant.unwrap_or(true) {
     println!("Skipping irrelevant headline: {}", article.title);
     continue;
 }
+
+let ticker_symbol = tickers.iter()
+    .find(|t| article.title.contains(&t.name))
+    .map(|t| t.symbol.as_str());
+
+let momentum = match ticker_symbol {
+    Some(symbol) => price_cache.get_momentum(symbol, &alpha_vantage_key, &client).await,
+    None => 0.0,
+};
+
+let final_score = (alpha * score) + (beta * momentum);
 let signal = serde_json::json!({
     "title": article.title,
     "published_at": article.published_at,
-    "score": score,
+    "score": final_score,
     "reason": sentiment.reason
 });
 
@@ -110,13 +128,13 @@ tx.send(signal.to_string()).ok();
 
 println!("Headline: {}", article.title);
 println!("Published at: {}", article.published_at);
-println!("Score: {}", score);
+println!("Score: {}", final_score);
 println!("Reason: {}", sentiment.reason);
 
 sqlx::query("INSERT INTO signals (title,published_at, score, reason) VALUES (?,?, ?, ?)")
     .bind(&article.title)
     .bind(&article.published_at)
-    .bind(score)
+    .bind(final_score)
     .bind(&sentiment.reason)
     .execute(&pool)
     .await

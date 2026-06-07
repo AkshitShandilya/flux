@@ -1,3 +1,25 @@
-tickers = ["Reliance Industries stock", "Infosys shares", "TCS stock", "HDFC Bank shares", "Wipro stock"]
-poll_interval_secs = 10
+poll_interval_secs = 120
+price_fetch_interval_secs = 14400
 port = 3000
+alpha = 0.7
+beta = 0.3
+
+[[tickers]]
+name = "Reliance Industries stock"
+symbol = "RELIANCE.BSE"
+
+[[tickers]]
+name = "Infosys shares"
+symbol = "INFY.BSE"
+
+[[tickers]]
+name = "TCS stock"
+symbol = "TCS.BSE"
+
+[[tickers]]
+name = "HDFC Bank shares"
+symbol = "HDFCBANK.BSE"
+
+[[tickers]]
+name = "Wipro stock"
+symbol = "WIPRO.BSE"

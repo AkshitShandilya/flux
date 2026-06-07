@@ -4,6 +4,7 @@ mod poller;
 mod api;
 mod config;
 mod models;
+mod price;
 
 
 use dotenvy::dotenv;
@@ -53,7 +54,7 @@ let (tx, _rx) = tokio::sync::broadcast::channel::<String>(100);
 let tx_poller = tx.clone();
 let tx_ws = tx.clone();
 tokio::spawn(async move {
-    poller::run(pool_for_loop, seen, tx_poller,config.news_api_key, config.llm_key,config.tickers,config.poll_interval_secs).await;
+    poller::run(pool_for_loop, seen, tx_poller,config.news_api_key, config.llm_key,config.tickers,config.poll_interval_secs,config.alpha,config.beta,config.alpha_vantage_key,config.price_fetch_interval_secs).await;
 });
 
 let app = axum::Router::new()
